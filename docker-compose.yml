@@ -1,0 +1,48 @@
+services:
+  database:
+    image: neo4j:4.4-community
+    hostname: database
+    container_name: database
+    ports:
+      - "7474:7474"
+      - "7473:7473"
+      - "7687:7687"
+    environment:
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+      NEO4J_AUTH: neo4j/Neo4j
+    networks:
+      - net
+    volumes:
+      - "data:/data"
+      - "logs:/logs"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 30s
+      retries: 10
+ 
+
+  optkg-app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      NEO4J_AUTH: none
+      NEO4J_URI: "bolt://database:7687"
+      USER_NAME: neo4j
+      PASSWORD: Neo4j
+    networks:
+      - net
+    depends_on:
+      database:
+        condition: service_healthy
+        # condition: service_completed_successfully
+
+networks:
+  net:
+
+volumes:
+  data:
+  logs:
